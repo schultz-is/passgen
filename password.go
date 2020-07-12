@@ -9,12 +9,12 @@ import (
 
 // GeneratePasswords generates random passwords based on the configuration provided by the user.
 func GeneratePasswords(
-	count uint,
-	length uint,
-	alphabet string,
+	count uint, // Number of passwords to generate.
+	length uint, // Length of each generated password.
+	alphabet string, // Alphabet to pull password characters from.
 ) (
-	passwords []string,
-	err error,
+	passwords []string, // Generated passwords.
+	err error, // Possible error encountered during password generation.
 ) {
 	// Validate the supplied count parameter.
 	if count < PasswordCountMin || count > PasswordCountMax {
