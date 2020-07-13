@@ -31,18 +31,19 @@ func GeneratePasswords(
 	for _, char := range alphabet {
 		chars[char] = struct{}{}
 	}
-	var charset []rune
+	var charSet []rune
 	for char := range chars {
-		charset = append(charset, char)
+		charSet = append(charSet, char)
 	}
 
 	// Validate the provided alphabet.
-	if len(charset) < AlphabetLengthMin {
+	if len(charSet) < AlphabetLengthMin {
 		return nil, fmt.Errorf("alphabet must contain at least %d unique characters", AlphabetLengthMin)
 	}
 
-	// Determine how many bytes are needed to represent a password of the specified length in the provided alphabet.
-	bitsPerChar := uint(math.Ceil(math.Log2(float64(len(charset)))))
+	// Determine how many bytes are needed to represent a password of the specified length in the
+	// provided alphabet.
+	bitsPerChar := uint(math.Ceil(math.Log2(float64(len(charSet)))))
 	bitsPerPassword := bitsPerChar * length
 	bytesPerPassword := bitsPerPassword / 8
 	if bitsPerPassword%8 > 0 {
@@ -87,10 +88,10 @@ func GeneratePasswords(
 			}
 
 			// Ensure the character index is within the bounds of the alphabet.
-			charIdx = charIdx % uint(len(charset))
+			charIdx = charIdx % uint(len(charSet))
 
 			// Retrieve the character from the alphabet and write it to the password.
-			b.WriteRune(charset[charIdx])
+			b.WriteRune(charSet[charIdx])
 
 			// Reset character index value.
 			charIdx = 0
