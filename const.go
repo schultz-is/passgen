@@ -20,6 +20,7 @@ const (
 	AlphabetNumericAmbiguous = "01" + AlphabetNumeric                          // Arabic numerals.
 	AlphabetSpecial          = "!@#$%^&*_-+="                                  // Selection of special characters.
 	AlphabetDefault          = AlphabetLower + AlphabetUpper + AlphabetNumeric // Alphanumeric English characters, ambiguous characters removed.
+	AlphabetDefaultAmbiguous = AlphabetLowerAmbiguous + AlphabetUpperAmbiguous + AlphabetNumericAmbiguous
 
 	PassphraseCountMin     = 1    // Fewest allowed passphrases to generate.
 	PassphraseCountMax     = 1024 // Most allowed passphrases to generate.
