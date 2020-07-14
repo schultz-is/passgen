@@ -13,10 +13,22 @@ build:
 .PHONY: clean
 clean:
 	rm -rf dist
+	rm -rf cover
 
 .PHONY: test
 test:
-	go test -v -race $(PKGS)
+	mkdir -p cover
+	go test \
+		-v \
+		-race \
+		-coverprofile cover/cover.out \
+		$(PKGS)
+
+.PHONY: cover
+cover:
+	go tool cover \
+		-html \
+		cover/cover.out
 
 .PHONY: vet
 vet:
