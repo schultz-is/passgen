@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +34,7 @@ func TestGeneratePasswords(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, passwords, PasswordCountDefault)
 				for _, password := range passwords {
-					require.Len(t, password, PasswordLengthDefault)
+					require.Equal(t, PasswordLengthDefault, utf8.RuneCountInString(password))
 					for _, char := range password {
 						require.Contains(t, AlphabetDefault, string(char))
 					}
@@ -53,7 +54,7 @@ func TestGeneratePasswords(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, passwords, PasswordCountDefault+1)
 				for _, password := range passwords {
-					require.Len(t, password, PasswordLengthDefault+1)
+					require.Equal(t, PasswordLengthDefault+1, utf8.RuneCountInString(password))
 					for _, char := range password {
 						require.Contains(t, AlphabetDefault+"-", string(char))
 					}
