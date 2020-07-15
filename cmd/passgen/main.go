@@ -21,5 +21,8 @@ func main() {
 	rootCmd.AddCommand(passwordCmd)
 
 	// Run the root command.
-	rootCmd.Execute()
+	err := rootCmd.Execute()
+	if err != nil {
+		panic(err)
+	}
 }

@@ -317,7 +317,8 @@ func TestPasswordCommand(t *testing.T) {
 
 				passwordCmd.SetArgs(test.args)
 				for flag, value := range test.flags {
-					passwordCmd.Flags().Set(flag, value)
+					err := passwordCmd.Flags().Set(flag, value)
+					require.NoError(t, err)
 				}
 
 				err := passwordCmd.Execute()
