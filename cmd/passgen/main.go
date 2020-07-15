@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
+var (
 	// This is used for platform-specific bounds checking of parsed uints.
 	uintMax = ^uint(0)
 )
