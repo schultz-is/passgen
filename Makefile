@@ -37,7 +37,3 @@ vet:
 .PHONY: lint
 lint:
 	golangci-lint run -v ./...
-
-.PHONY: staticcheck
-staticcheck:
-	staticcheck $(PKGS)
