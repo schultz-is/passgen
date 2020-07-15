@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
@@ -20,9 +22,13 @@ func main() {
 	passwordCmd := buildPasswordCmd()
 	rootCmd.AddCommand(passwordCmd)
 
+	// Construct the passphrase generation subcommand.
+	passphraseCmd := buildPassphraseCmd()
+	rootCmd.AddCommand(passphraseCmd)
+
 	// Run the root command.
 	err := rootCmd.Execute()
 	if err != nil {
-		panic(err)
+		os.Exit(2)
 	}
 }

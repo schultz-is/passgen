@@ -187,7 +187,7 @@ func buildPasswordCmd() *cobra.Command {
 				cmd.Println(password)
 			}
 
-			return nil
+			return
 		},
 	}
 
