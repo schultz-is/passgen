@@ -144,7 +144,9 @@ func buildPassphraseCmd() *cobra.Command {
 				}
 
 				// Clean up after the file has been read.
-				defer wordListFile.Close()
+				defer func() {
+					_ = wordListFile.Close()
+				}()
 
 				// Step through each line and append it to the word list.
 				var wordList []string

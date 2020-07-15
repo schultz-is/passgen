@@ -29,7 +29,11 @@ func TestPassphraseCommand(t *testing.T) {
 	}
 
 	wordListFile, err := ioutil.TempFile("", "")
-	defer wordListFile.Close()
+
+	defer func() {
+		_ = wordListFile.Close()
+	}()
+
 	require.NoError(t, err)
 	wordListFilename := wordListFile.Name()
 	for _, word := range alternateWordList {
