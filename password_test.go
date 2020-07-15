@@ -65,6 +65,26 @@ func TestGeneratePasswords(t *testing.T) {
 			nil,
 		},
 		{
+			"multibyte alphabet characters",
+			PasswordCountDefault,
+			PasswordLengthDefault,
+			"🐶🐱",
+
+			func(t *testing.T, passwords []string, err error) {
+				require.NoError(t, err)
+				require.Len(t, passwords, PasswordCountDefault)
+				for _, password := range passwords {
+					require.Equal(t, PasswordLengthDefault, utf8.RuneCountInString(password))
+					for _, char := range password {
+						require.Contains(t, "🐶🐱", string(char))
+					}
+				}
+			},
+
+			nil,
+			nil,
+		},
+		{
 			"count too small",
 			PasswordCountMin - 1,
 			PasswordLengthDefault,
