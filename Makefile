@@ -1,5 +1,3 @@
-PKGS := $(shell go list ./... | grep -v /vendor)
-
 .PHONY: build
 build:
 	mkdir -p dist
@@ -22,7 +20,7 @@ test:
 		-v \
 		-race \
 		-coverprofile cover/cover.out \
-		$(PKGS)
+		./...
 
 .PHONY: cover
 cover:
@@ -32,7 +30,7 @@ cover:
 
 .PHONY: vet
 vet:
-	go vet -v $(PKGS)
+	go vet -v ./...
 
 .PHONY: lint
 lint:
