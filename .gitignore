@@ -26,3 +26,5 @@ _testmain.go
 /test.out
 /dist
 /cover
+/prof
+/passgen.test

@@ -12,6 +12,8 @@ build:
 clean:
 	rm -rf dist
 	rm -rf cover
+	rm -rf prof
+	rm -rf passgen.test
 
 .PHONY: test
 test:
@@ -35,3 +37,13 @@ vet:
 .PHONY: lint
 lint:
 	golangci-lint run -v ./...
+
+.PHONY: benchmark
+benchmark:
+	mkdir -p prof
+	go test \
+		-v \
+		-run Benchmark \
+		-cpuprofile prof/cpu.prof \
+		-memprofile prof/mem.prof \
+		-bench ./...
