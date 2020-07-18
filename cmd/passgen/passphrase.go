@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -172,7 +173,7 @@ func buildPassphraseCmd() *cobra.Command {
 
 			// Print out a single passphrase per line.
 			for _, passphrase := range passphrases {
-				cmd.Println(passphrase)
+				fmt.Fprintln(cmd.OutOrStdout(), passphrase)
 			}
 
 			return

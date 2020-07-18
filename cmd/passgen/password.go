@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -184,7 +185,7 @@ func buildPasswordCmd() *cobra.Command {
 
 			// Print out a single password per line.
 			for _, password := range passwords {
-				cmd.Println(password)
+				fmt.Fprintln(cmd.OutOrStdout(), password)
 			}
 
 			return
