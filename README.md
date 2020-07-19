@@ -11,7 +11,7 @@
 
 To install the command-line utility:
 ```console
-git clone https://github.com/schultz-is/passgen.git
+git clone -b stable --depth 1 https://github.com/schultz-is/passgen.git
 cd passgen
 make install
 ```
