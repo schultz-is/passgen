@@ -1,3 +1,5 @@
+VERSION ?= $(shell git describe --tags --dirty --match 'v*.*.*')
+
 .PHONY: build
 build:
 	mkdir -p dist
@@ -6,6 +8,7 @@ build:
 		-race \
 		-mod vendor \
 		-o dist \
+		-ldflags "-X main.version=$(VERSION)" \
 		./cmd/...
 
 .PHONY: clean

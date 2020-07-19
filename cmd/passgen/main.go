@@ -12,13 +12,17 @@ var (
 
 	// Exit function used to aid test coverage.
 	exitFunc = os.Exit
+
+	// This version variable is populated at compilation.
+	version string
 )
 
 func main() {
 	// Define the root command.
 	rootCmd := &cobra.Command{
-		Use:   "passgen",
-		Short: "Generate passwords and passphrases",
+		Use:     "passgen",
+		Short:   "Generate passwords and passphrases",
+		Version: version,
 	}
 
 	// Construct the password generation subcommand.
