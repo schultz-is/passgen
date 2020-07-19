@@ -58,7 +58,7 @@ func TestGeneratePassphrases(t *testing.T) {
 			PassphraseCountDefault + 1,
 			PassphraseWordCountDefault + 1,
 			PassphraseSeparatorDash,
-			PassphraseCasingUpper,
+			PassphraseCasingLower,
 			alternateWordList,
 
 			func(t *testing.T, passphrases []string, err error) {
@@ -81,7 +81,7 @@ func TestGeneratePassphrases(t *testing.T) {
 			PassphraseCountDefault + 1,
 			PassphraseWordCountDefault + 1,
 			PassphraseSeparatorUnderscore,
-			PassphraseCasingTitle,
+			PassphraseCasingUpper,
 			alternateWordList,
 
 			func(t *testing.T, passphrases []string, err error) {
@@ -89,6 +89,29 @@ func TestGeneratePassphrases(t *testing.T) {
 				require.Len(t, passphrases, PassphraseCountDefault+1)
 				for _, passphrase := range passphrases {
 					words := strings.Split(passphrase, string(PassphraseSeparatorUnderscore))
+					require.Len(t, words, PassphraseWordCountDefault+1)
+					for _, word := range words {
+						require.Contains(t, alternateWordList, strings.ToLower(word))
+					}
+				}
+			},
+
+			nil,
+			nil,
+		},
+		{
+			"non-default parameters",
+			PassphraseCountDefault + 1,
+			PassphraseWordCountDefault + 1,
+			PassphraseSeparatorDot,
+			PassphraseCasingTitle,
+			alternateWordList,
+
+			func(t *testing.T, passphrases []string, err error) {
+				require.NoError(t, err)
+				require.Len(t, passphrases, PassphraseCountDefault+1)
+				for _, passphrase := range passphrases {
+					words := strings.Split(passphrase, string(PassphraseSeparatorDot))
 					require.Len(t, words, PassphraseWordCountDefault+1)
 					for _, word := range words {
 						require.Contains(t, alternateWordList, strings.ToLower(word))
@@ -487,6 +510,14 @@ func BenchmarkGeneratePassphrases(b *testing.B) {
 			6,
 			PassphraseSeparatorDefault,
 			PassphraseCasingTitle,
+			WordListDefault,
+		},
+		{
+			"uncased output",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingNone,
 			WordListDefault,
 		},
 	}

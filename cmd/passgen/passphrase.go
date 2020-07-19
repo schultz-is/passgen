@@ -30,6 +30,7 @@ func buildPassphraseCmd() *cobra.Command {
 		casingLower bool // Generate lowercase passphrases.
 		casingUpper bool // Generate uppercase passphrases.
 		casingTitle bool // Generate title-case passphrases.
+		casingNone  bool // Generate passphrases without applying any casing transformation.
 
 		wordListFilename string // Filename of a newline-delimited word list to use in passphrases.
 	}{
@@ -41,6 +42,7 @@ func buildPassphraseCmd() *cobra.Command {
 
 		"",
 
+		false,
 		false,
 		false,
 		false,
@@ -135,6 +137,13 @@ func buildPassphraseCmd() *cobra.Command {
 					return errors.New("at most one casing method is allowed")
 				}
 				passphraseConfig.casing = passgen.PassphraseCasingTitle
+				casingSet = true
+			}
+			if passphraseConfig.casingNone {
+				if casingSet {
+					return errors.New("at most one casing method is allowed")
+				}
+				passphraseConfig.casing = passgen.PassphraseCasingNone
 			}
 
 			// Attempt to open and read the word list file if provided.
@@ -214,6 +223,15 @@ func buildPassphraseCmd() *cobra.Command {
 		"t",
 		false,
 		"generate title-case passphrases",
+	)
+
+	// Define the flag for generating uncased passphrases.
+	passphraseCmd.Flags().BoolVarP(
+		&passphraseConfig.casingNone,
+		"no-casing",
+		"n",
+		false,
+		"generate passphrases without applying any case transformation",
 	)
 
 	// Define the flag for a word list filename.

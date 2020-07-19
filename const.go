@@ -40,7 +40,8 @@ const (
 	PassphraseCasingLower   = iota // All lowercase passphrase output.
 	PassphraseCasingUpper          // All uppercase passphrase output.
 	PassphraseCasingTitle          // Title casing for each passphrase word.
-	PassphraseCasingDefault = PassphraseCasingLower
+	PassphraseCasingNone           // No casing transformation is applied to the provided word list.
+	PassphraseCasingDefault = PassphraseCasingNone
 
 	WordListLengthMin = 2
 )

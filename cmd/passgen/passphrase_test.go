@@ -265,6 +265,21 @@ func TestPassphraseCommand(t *testing.T) {
 			nil,
 		},
 		{
+			"too many casing flags",
+			nil,
+			map[string]string{
+				"title-case": "true",
+				"no-casing":  "true",
+			},
+
+			func(t *testing.T, output string, err error) {
+				require.Error(t, err)
+			},
+
+			nil,
+			nil,
+		},
+		{
 			"lowercase flag",
 			nil,
 			map[string]string{
@@ -329,6 +344,29 @@ func TestPassphraseCommand(t *testing.T) {
 					for _, word := range words {
 						require.Contains(t, passgen.WordListDefault, strings.ToLower(word))
 						require.Equal(t, strings.Title(word), word)
+					}
+				}
+			},
+
+			nil,
+			nil,
+		},
+		{
+			"no-casing flag",
+			nil,
+			map[string]string{
+				"no-casing": "true",
+			},
+
+			func(t *testing.T, output string, err error) {
+				require.NoError(t, err)
+				passphrases := strings.Split(strings.TrimSpace(output), "\n")
+				require.Len(t, passphrases, passgen.PassphraseCountDefault)
+				for _, passphrase := range passphrases {
+					words := strings.Split(passphrase, string(passgen.PassphraseSeparatorDefault))
+					require.Len(t, words, passgen.PassphraseWordCountDefault)
+					for _, word := range words {
+						require.Contains(t, passgen.WordListDefault, word)
 					}
 				}
 			},

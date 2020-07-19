@@ -33,7 +33,7 @@ func GeneratePassphrases(
 
 	// Validate the supplied casing parameter.
 	switch casing {
-	case PassphraseCasingLower, PassphraseCasingUpper, PassphraseCasingTitle:
+	case PassphraseCasingLower, PassphraseCasingUpper, PassphraseCasingTitle, PassphraseCasingNone:
 		break
 	default:
 		return nil, fmt.Errorf("invalid word casing")
@@ -49,6 +49,8 @@ func GeneratePassphrases(
 			words[strings.ToUpper(word)] = struct{}{}
 		case PassphraseCasingTitle:
 			words[strings.Title(word)] = struct{}{}
+		case PassphraseCasingNone:
+			words[word] = struct{}{}
 		}
 	}
 	var wordSet []string
