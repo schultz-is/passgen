@@ -260,3 +260,251 @@ func TestGeneratePassphrases(t *testing.T) {
 		)
 	}
 }
+
+func BenchmarkGeneratePassphrases(b *testing.B) {
+	type benchmarkDef struct {
+		name      string
+		count     uint
+		wordCount uint
+		separator rune
+		casing    PassphraseCasing
+		wordList  []string
+	}
+
+	var benchmarks = []benchmarkDef{
+		// Preset value benchmarks.
+		{
+			"defaults",
+			PassphraseCountDefault,
+			PassphraseWordCountDefault,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"minimums",
+			PassphraseCountMin,
+			PassphraseWordCountMin,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			[]string{"a", "b"},
+		},
+		{
+			"maximums",
+			PassphraseCountMax,
+			PassphraseWordCountMax,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+
+		// Increasing count benchmarks.
+		{
+			"25_6_default",
+			25,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"50_6_default",
+			50,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"100_6_default",
+			100,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"250_6_default",
+			250,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"500_6_default",
+			500,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+
+		// Increasing word count benchmarks.
+		{
+			"16_8_default",
+			16,
+			8,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"16_16_default",
+			16,
+			16,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"16_32_default",
+			16,
+			32,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+		{
+			"16_64_default",
+			16,
+			64,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault,
+		},
+
+		// Increasing word list size benchmarks.
+		{
+			"16_6_25",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:25],
+		},
+		{
+			"16_6_50",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:50],
+		},
+		{
+			"16_6_100",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:100],
+		},
+		{
+			"16_6_250",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:250],
+		},
+		{
+			"16_6_500",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:500],
+		},
+		{
+			"16_6_1000",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:1000],
+		},
+		{
+			"16_6_2500",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:2500],
+		},
+		{
+			"16_6_5000",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			WordListDefault[:5000],
+		},
+
+		// Special cases.
+		{
+			"once-duplicated word list",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			append(WordListDefault, WordListDefault...),
+		},
+		{
+			"twice-duplicated word list",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			append(WordListDefault, append(WordListDefault, WordListDefault...)...),
+		},
+		{
+			"thrice-duplicated word list",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingDefault,
+			append(WordListDefault, append(WordListDefault, append(WordListDefault, WordListDefault...)...)...),
+		},
+		{
+			"lowercase output",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingLower,
+			WordListDefault,
+		},
+		{
+			"uppercase output",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingUpper,
+			WordListDefault,
+		},
+		{
+			"title-case output",
+			16,
+			6,
+			PassphraseSeparatorDefault,
+			PassphraseCasingTitle,
+			WordListDefault,
+		},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(
+			benchmark.name,
+			func(b *testing.B) {
+				for n := 0; n < b.N; n++ {
+					_, _ = GeneratePassphrases(
+						benchmark.count,
+						benchmark.wordCount,
+						benchmark.separator,
+						benchmark.casing,
+						benchmark.wordList,
+					)
+				}
+			},
+		)
+	}
+}
