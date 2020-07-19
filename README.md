@@ -33,8 +33,17 @@ Bc!Eyca9pHmWuRJr
 ```
 
 ```console
-> passgen pw --alphabet "ACGT"
-CTGCAGTCAAGGTTTG
+> passgen pw 5 10 --alphabet "ACGT"
+ATAAG
+CATTC
+TTGAT
+CGGAT
+TGTAG
+GCGAC
+ACATG
+TTATT
+ACTAT
+CCGTA
 ```
 
 ```console
@@ -48,8 +57,13 @@ Cranberry.Deskwork.Ramble.Energize.Gloss.Tranquil
 ```
 
 ```console
-> passgen pp -uw words.txt
-MUSHROOM CHAMPION POD CHAFE SUITABLY EMPLOYER
+> passgen pp 5 6 -uw words.txt
+TANNING TRICKLE PRECOOK KEEP ARMHOLE
+MARITIME LADYLIKE ELM UNDRAFTED BONANZA
+EGOTISM MANTIS BANNER MUNICIPAL AMUSING
+EVOLUTION WIRING TRACK BLURT GREYHOUND
+UNTITLED RURAL SHAKINESS GEOMETRIC ARMREST
+WHY OUTCLASS RIVETING OVERLORD UNFIXED
 ```
 
 ### Using the API
@@ -123,7 +137,7 @@ func main() {
 
 ### Running benchmarks and generating CPU and memory profiles
 ```console
-make benchmark
+> make benchmark
 ```
 
 ### Viewing CPU and memory profiles
