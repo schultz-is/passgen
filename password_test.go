@@ -215,7 +215,7 @@ func TestGeneratePasswords(t *testing.T) {
 	}
 }
 
-func BenchmarkGeneratePasswords_Default(b *testing.B) {
+func BenchmarkGeneratePasswords(b *testing.B) {
 	type benchmarkDef struct {
 		name     string
 		count    uint
