@@ -11,7 +11,9 @@
 
 To install the command-line utility:
 ```console
-go install github.com/schultz-is/passgen/cmd/passgen
+git clone https://github.com/schultz-is/passgen.git
+cd passgen
+make install
 ```
 
 To install the API for use in other projects:
@@ -123,25 +125,22 @@ func main() {
 
 ## Tests
 
-### Running tests and generating a coverage report
 ```console
 > make test
-```
-
-### Viewing unit test coverage
-```console
 > make cover
 ```
 
 ## Benchmarks
 
-### Running benchmarks and generating CPU and memory profiles
 ```console
 > make benchmark
-```
-
-### Viewing CPU and memory profiles
-```console
 > go tool pprof prof/cpu.prof
 > go tool pprof prof/mem.prof
+```
+
+## Build
+
+```console
+> make build
+> ./dist/passgen --version
 ```

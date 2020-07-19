@@ -11,6 +11,15 @@ build:
 		-ldflags "-X main.version=$(VERSION)" \
 		./cmd/...
 
+.PHONY: install
+install:
+	go install \
+		-v \
+		-race \
+		-mod vendor \
+		-ldflags "-X main.version=$(VERSION)" \
+		./cmd/...
+
 .PHONY: clean
 clean:
 	rm -rf dist
