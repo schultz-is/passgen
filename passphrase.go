@@ -21,7 +21,7 @@ func GeneratePassphrases(
 	passphrases []string, // Generated passphrases.
 	err error, // Possible error encountered during passphrase generation.
 ) {
-	// Validate the supplied count paramter.
+	// Validate the supplied count parameter.
 	if count < PassphraseCountMin || count > PassphraseCountMax {
 		return nil, fmt.Errorf("count must be at least %d and at most %d", PassphraseCountMin, PassphraseCountMax)
 	}

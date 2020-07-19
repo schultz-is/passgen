@@ -15,7 +15,7 @@ import (
 
 // buildPassphraseCmd constructs the passphrase subcommand responsible for generating passphrases.
 func buildPassphraseCmd() *cobra.Command {
-	// Build a configuration struct for converting commandline input into paramters for a passgen
+	// Build a configuration struct for converting commandline input into parameters for a passgen
 	// GeneratePassphrases function call.
 	passphraseConfig := struct {
 		count     uint                     // Number of passphrases to generate.

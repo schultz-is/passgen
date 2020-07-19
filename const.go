@@ -2,6 +2,7 @@ package passgen
 
 import "crypto/rand"
 
+// Helpful defaults, limits, and options for configuring package function calls.
 const (
 	PasswordCountMin     = 1    // Fewest allowed passwords to generate.
 	PasswordCountMax     = 1024 // Most allowed passwords to generate.
