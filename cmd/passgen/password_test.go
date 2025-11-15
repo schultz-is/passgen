@@ -19,8 +19,8 @@ func TestPasswordCommand(t *testing.T) {
 		flags map[string]string
 
 		requirements testReqs
-		setup        func() interface{}
-		teardown     func(interface{})
+		setup        func() any
+		teardown     func(any)
 	}
 
 	var tests = []testDef{
@@ -101,13 +101,13 @@ func TestPasswordCommand(t *testing.T) {
 				require.Error(t, err)
 			},
 
-			func() interface{} {
+			func() any {
 				originalUintMax := uintMax
 				uintMax = 15
 				return originalUintMax
 			},
 
-			func(setupContext interface{}) {
+			func(setupContext any) {
 				uintMax = setupContext.(uint)
 			},
 		},
@@ -168,13 +168,13 @@ func TestPasswordCommand(t *testing.T) {
 				require.Error(t, err)
 			},
 
-			func() interface{} {
+			func() any {
 				originalUintMax := uintMax
 				uintMax = 15
 				return originalUintMax
 			},
 
-			func(setupContext interface{}) {
+			func(setupContext any) {
 				uintMax = setupContext.(uint)
 			},
 		},
@@ -306,7 +306,7 @@ func TestPasswordCommand(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var setupContext interface{}
+				var setupContext any
 				if test.setup != nil {
 					setupContext = test.setup()
 				}

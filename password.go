@@ -51,12 +51,11 @@ func GeneratePasswords(
 	}
 
 	var (
-		i              uint            // Password counter.
 		b              strings.Builder // String builder for efficiently constructing passwords.
 		passwordBuffer []byte          // Byte buffer for random data used as password source.
 	)
 
-	for i = 0; i < count; i++ {
+	for range count {
 		// Read enough random data to sufficiently produce a password.
 		passwordBuffer = make([]byte, bytesPerPassword)
 		_, err = io.ReadFull(randSource, passwordBuffer)
@@ -65,15 +64,13 @@ func GeneratePasswords(
 		}
 
 		var (
-			j          uint // Password character counter.
-			charIdx    uint // Character index within the provided alphabet.
-			bitIdx     uint // Source buffer bit counter.
-			byteIdx    uint // Source buffer byte counter.
-			charBitIdx uint // Password character bit counter.
+			charIdx uint // Character index within the provided alphabet.
+			bitIdx  uint // Source buffer bit counter.
+			byteIdx uint // Source buffer byte counter.
 		)
 
-		for j = 0; j < length; j++ {
-			for charBitIdx = 0; charBitIdx < bitsPerChar; charBitIdx++ {
+		for range length {
+			for range bitsPerChar {
 				// Left shift the character index to read the next bit.
 				charIdx <<= 1
 

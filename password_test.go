@@ -20,8 +20,8 @@ func TestGeneratePasswords(t *testing.T) {
 		alphabet string
 
 		requirements testReqs
-		setup        func() interface{}
-		teardown     func(interface{})
+		setup        func() any
+		teardown     func(any)
 	}
 
 	var tests = []testDef{
@@ -180,12 +180,12 @@ func TestGeneratePasswords(t *testing.T) {
 				require.Error(t, err)
 			},
 
-			func() interface{} {
+			func() any {
 				originalRandSource := randSource
 				randSource = new(bytes.Reader)
 				return originalRandSource
 			},
-			func(setupContext interface{}) {
+			func(setupContext any) {
 				randSource = setupContext.(io.Reader)
 			},
 		},
@@ -195,7 +195,7 @@ func TestGeneratePasswords(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var setupContext interface{}
+				var setupContext any
 				if test.setup != nil {
 					setupContext = test.setup()
 				}
@@ -375,7 +375,7 @@ func BenchmarkGeneratePasswords(b *testing.B) {
 		b.Run(
 			benchmark.name,
 			func(b *testing.B) {
-				for n := 0; n < b.N; n++ {
+				for b.Loop() {
 					_, _ = GeneratePasswords(
 						benchmark.count,
 						benchmark.length,

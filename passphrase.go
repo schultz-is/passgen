@@ -76,12 +76,11 @@ func GeneratePassphrases(
 	}
 
 	var (
-		i                uint            // Passphrase counter.
 		b                strings.Builder // String builder for efficiently constructing passphrases.
 		passphraseBuffer []byte          // Byte buffer for random data used as a passphrase source.
 	)
 
-	for i = 0; i < count; i++ {
+	for range count {
 		// Read enough random data to sufficiently produce a passphrase.
 		passphraseBuffer = make([]byte, bytesPerPassphrase)
 		_, err = io.ReadFull(randSource, passphraseBuffer)
@@ -90,15 +89,14 @@ func GeneratePassphrases(
 		}
 
 		var (
-			j          uint // Passphrase word counter.
-			wordIdx    uint // Word index within the provided word list.
-			bitIdx     uint // Source buffer bit counter.
-			byteIdx    uint // Source buffer byte counter.
-			wordBitIdx uint // Passphrase word bit counter.
+			j       uint // Passphrase word counter.
+			wordIdx uint // Word index within the provided word list.
+			bitIdx  uint // Source buffer bit counter.
+			byteIdx uint // Source buffer byte counter.
 		)
 
-		for j = 0; j < wordCount; j++ {
-			for wordBitIdx = 0; wordBitIdx < bitsPerWord; wordBitIdx++ {
+		for j = range wordCount {
+			for range bitsPerWord {
 				// Left shift the word index to read the next bit.
 				wordIdx <<= 1
 
