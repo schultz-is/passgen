@@ -5,6 +5,9 @@ import (
 	"io"
 	"math"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // PassphraseCasing represents the casing of each word within a passphrase.
@@ -48,7 +51,7 @@ func GeneratePassphrases(
 		case PassphraseCasingUpper:
 			words[strings.ToUpper(word)] = struct{}{}
 		case PassphraseCasingTitle:
-			words[strings.Title(word)] = struct{}{}
+			words[cases.Title(language.Und).String(word)] = struct{}{}
 		case PassphraseCasingNone:
 			words[word] = struct{}{}
 		}

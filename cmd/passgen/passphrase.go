@@ -182,7 +182,10 @@ func buildPassphraseCmd() *cobra.Command {
 
 			// Print out a single passphrase per line.
 			for _, passphrase := range passphrases {
-				fmt.Fprintln(cmd.OutOrStdout(), passphrase)
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), passphrase)
+				if err != nil {
+					return err
+				}
 			}
 
 			return

@@ -1,13 +1,15 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/schultz-is/passgen"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func TestPassphraseCommand(t *testing.T) {
@@ -28,7 +30,7 @@ func TestPassphraseCommand(t *testing.T) {
 		"alfa", "bravo", "charlie", "delta", "echo",
 	}
 
-	wordListFile, err := ioutil.TempFile("", "")
+	wordListFile, err := os.CreateTemp("", "")
 
 	defer func() {
 		_ = wordListFile.Close()
@@ -343,7 +345,7 @@ func TestPassphraseCommand(t *testing.T) {
 					require.Len(t, words, passgen.PassphraseWordCountDefault)
 					for _, word := range words {
 						require.Contains(t, passgen.WordListDefault, strings.ToLower(word))
-						require.Equal(t, strings.Title(word), word)
+						require.Equal(t, cases.Title(language.Und).String(word), word)
 					}
 				}
 			},
