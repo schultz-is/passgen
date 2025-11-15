@@ -185,7 +185,10 @@ func buildPasswordCmd() *cobra.Command {
 
 			// Print out a single password per line.
 			for _, password := range passwords {
-				fmt.Fprintln(cmd.OutOrStdout(), password)
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), password)
+				if err != nil {
+					return err
+				}
 			}
 
 			return
