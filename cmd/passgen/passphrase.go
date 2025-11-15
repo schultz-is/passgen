@@ -162,6 +162,9 @@ func buildPassphraseCmd() *cobra.Command {
 				var wordList []string
 				scanner := bufio.NewScanner(wordListFile)
 				for scanner.Scan() {
+					if scanner.Err() != nil {
+						return scanner.Err()
+					}
 					wordList = append(wordList, strings.TrimSpace(scanner.Text()))
 				}
 
