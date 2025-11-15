@@ -21,8 +21,8 @@ func TestPassphraseCommand(t *testing.T) {
 		flags map[string]string
 
 		requirements testReqs
-		setup        func() interface{}
-		teardown     func(interface{})
+		setup        func() any
+		teardown     func(any)
 	}
 
 	// Construct a custom word list and write it to a temp file.
@@ -122,13 +122,13 @@ func TestPassphraseCommand(t *testing.T) {
 				require.Error(t, err)
 			},
 
-			func() interface{} {
+			func() any {
 				originalUintMax := uintMax
 				uintMax = 15
 				return originalUintMax
 			},
 
-			func(setupContext interface{}) {
+			func(setupContext any) {
 				uintMax = setupContext.(uint)
 			},
 		},
@@ -189,13 +189,13 @@ func TestPassphraseCommand(t *testing.T) {
 				require.Error(t, err)
 			},
 
-			func() interface{} {
+			func() any {
 				originalUintMax := uintMax
 				uintMax = 15
 				return originalUintMax
 			},
 
-			func(setupContext interface{}) {
+			func(setupContext any) {
 				uintMax = setupContext.(uint)
 			},
 		},
@@ -419,7 +419,7 @@ func TestPassphraseCommand(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var setupContext interface{}
+				var setupContext any
 				if test.setup != nil {
 					setupContext = test.setup()
 				}
