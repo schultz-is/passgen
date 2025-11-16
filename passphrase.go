@@ -13,6 +13,22 @@ import (
 // PassphraseCasing represents the casing of each word within a passphrase.
 type PassphraseCasing uint8
 
+// applyCasing applies the specified casing transformation to a word.
+func applyCasing(word string, casing PassphraseCasing) string {
+	switch casing {
+	case PassphraseCasingLower:
+		return strings.ToLower(word)
+	case PassphraseCasingUpper:
+		return strings.ToUpper(word)
+	case PassphraseCasingTitle:
+		return cases.Title(language.Und).String(word)
+	case PassphraseCasingNone:
+		return word
+	default:
+		return word
+	}
+}
+
 // GeneratePassphrases generates random passphrases based on the configuration provided by the user.
 func GeneratePassphrases(
 	count uint, // Number of passphrases to generate.
@@ -45,16 +61,7 @@ func GeneratePassphrases(
 	// Deduplicate the provided word list.
 	words := map[string]struct{}{}
 	for _, word := range wordList {
-		switch casing {
-		case PassphraseCasingLower:
-			words[strings.ToLower(word)] = struct{}{}
-		case PassphraseCasingUpper:
-			words[strings.ToUpper(word)] = struct{}{}
-		case PassphraseCasingTitle:
-			words[cases.Title(language.Und).String(word)] = struct{}{}
-		case PassphraseCasingNone:
-			words[word] = struct{}{}
-		}
+		words[applyCasing(word, casing)] = struct{}{}
 	}
 	var wordSet []string
 	for word := range words {

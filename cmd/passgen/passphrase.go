@@ -5,13 +5,60 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/schultz-is/passgen"
 	"github.com/spf13/cobra"
 )
+
+// selectCasing determines which casing to use, ensuring mutual exclusion of casing flags.
+func selectCasing(lower, upper, title, none bool) (passgen.PassphraseCasing, error) {
+	casings := []struct {
+		enabled bool
+		value   passgen.PassphraseCasing
+	}{
+		{lower, passgen.PassphraseCasingLower},
+		{upper, passgen.PassphraseCasingUpper},
+		{title, passgen.PassphraseCasingTitle},
+		{none, passgen.PassphraseCasingNone},
+	}
+
+	var selected *passgen.PassphraseCasing
+	for _, c := range casings {
+		if c.enabled {
+			if selected != nil {
+				return 0, errors.New("at most one casing method is allowed")
+			}
+			val := c.value
+			selected = &val
+		}
+	}
+
+	if selected == nil {
+		return passgen.PassphraseCasingDefault, nil
+	}
+	return *selected, nil
+}
+
+// readWordListFile reads a newline-delimited word list from a file.
+func readWordListFile(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var words []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+		words = append(words, strings.TrimSpace(scanner.Text()))
+	}
+	return words, nil
+}
 
 // buildPassphraseCmd constructs the passphrase subcommand responsible for generating passphrases.
 func buildPassphraseCmd() *cobra.Command {
@@ -66,44 +113,22 @@ func buildPassphraseCmd() *cobra.Command {
 				return errors.New("too many args provided")
 			}
 
-			// The first argument is the passphrase word count.
+			// Parse the first argument (passphrase word count) if provided.
 			if len(args) > 0 {
-				wordCount, err := strconv.ParseUint(
-					args[0],
-					10,
-					64,
-				)
+				wordCount, err := parseUintArg(args, 0, "word count")
 				if err != nil {
-					return errors.New("invalid word count provided")
+					return err
 				}
-
-				// Bounds check the word count for the platform.
-				if wordCount > uint64(uintMax) {
-					return errors.New("invalid word count provided")
-				}
-
-				// Update the configuration with parsed information.
-				passphraseConfig.wordCount = uint(wordCount)
+				passphraseConfig.wordCount = wordCount
 			}
 
-			// The second argument is the passphrase count.
+			// Parse the second argument (passphrase count) if provided.
 			if len(args) > 1 {
-				count, err := strconv.ParseUint(
-					args[1],
-					10,
-					64,
-				)
+				count, err := parseUintArg(args, 1, "count")
 				if err != nil {
-					return errors.New("invalid count provided")
+					return err
 				}
-
-				// Bounds check the count for the platform.
-				if count > uint64(uintMax) {
-					return errors.New("invalid count provided")
-				}
-
-				// Update the configuration with parsed information.
-				passphraseConfig.count = uint(count)
+				passphraseConfig.count = count
 			}
 
 			return nil
@@ -120,55 +145,22 @@ func buildPassphraseCmd() *cobra.Command {
 			}
 
 			// Set the casing based on user flags, ensuring no more than one flag is set.
-			casingSet := false
-			if passphraseConfig.casingLower {
-				passphraseConfig.casing = passgen.PassphraseCasingLower
-				casingSet = true
-			}
-			if passphraseConfig.casingUpper {
-				if casingSet {
-					return errors.New("at most one casing method is allowed")
-				}
-				passphraseConfig.casing = passgen.PassphraseCasingUpper
-				casingSet = true
-			}
-			if passphraseConfig.casingTitle {
-				if casingSet {
-					return errors.New("at most one casing method is allowed")
-				}
-				passphraseConfig.casing = passgen.PassphraseCasingTitle
-				casingSet = true
-			}
-			if passphraseConfig.casingNone {
-				if casingSet {
-					return errors.New("at most one casing method is allowed")
-				}
-				passphraseConfig.casing = passgen.PassphraseCasingNone
+			passphraseConfig.casing, err = selectCasing(
+				passphraseConfig.casingLower,
+				passphraseConfig.casingUpper,
+				passphraseConfig.casingTitle,
+				passphraseConfig.casingNone,
+			)
+			if err != nil {
+				return err
 			}
 
-			// Attempt to open and read the word list file if provided.
+			// Read the word list file if provided.
 			if passphraseConfig.wordListFilename != "" {
-				wordListFile, err := os.Open(passphraseConfig.wordListFilename)
+				passphraseConfig.wordList, err = readWordListFile(passphraseConfig.wordListFilename)
 				if err != nil {
 					return err
 				}
-
-				// Clean up after the file has been read.
-				defer func() {
-					_ = wordListFile.Close()
-				}()
-
-				// Step through each line and append it to the word list.
-				var wordList []string
-				scanner := bufio.NewScanner(wordListFile)
-				for scanner.Scan() {
-					if scanner.Err() != nil {
-						return scanner.Err()
-					}
-					wordList = append(wordList, strings.TrimSpace(scanner.Text()))
-				}
-
-				passphraseConfig.wordList = wordList
 			}
 
 			// Generate passphrases based on the command invocation.
