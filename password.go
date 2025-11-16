@@ -7,6 +7,70 @@ import (
 	"strings"
 )
 
+// validatePasswordParams validates the count and length parameters.
+func validatePasswordParams(count, length uint) error {
+	if count < PasswordCountMin || count > PasswordCountMax {
+		return fmt.Errorf("count must be at least %d and at most %d", PasswordCountMin, PasswordCountMax)
+	}
+	if length < PasswordLengthMin || length > PasswordLengthMax {
+		return fmt.Errorf("length must be at least %d and at most %d", PasswordLengthMin, PasswordLengthMax)
+	}
+	return nil
+}
+
+// deduplicateAlphabet removes duplicate characters from an alphabet and returns a character set.
+func deduplicateAlphabet(alphabet string) ([]rune, error) {
+	chars := map[rune]struct{}{}
+	for _, char := range alphabet {
+		chars[char] = struct{}{}
+	}
+
+	var charSet []rune
+	for char := range chars {
+		charSet = append(charSet, char)
+	}
+
+	if len(charSet) < AlphabetLengthMin {
+		return nil, fmt.Errorf("alphabet must contain at least %d unique characters", AlphabetLengthMin)
+	}
+
+	return charSet, nil
+}
+
+// calculateBytesNeeded determines how many random bytes are needed for generation.
+func calculateBytesNeeded(itemCount, setSize uint) uint {
+	bitsPerItem := uint(math.Ceil(math.Log2(float64(setSize))))
+	totalBits := bitsPerItem * itemCount
+	bytes := totalBits / 8
+	if totalBits%8 > 0 {
+		bytes++
+	}
+	return bytes
+}
+
+// sampleFromRuneSet samples items from a rune set using random bytes and bit manipulation.
+func sampleFromRuneSet(set []rune, itemCount uint, randomBytes []byte) string {
+	bitsPerItem := uint(math.Ceil(math.Log2(float64(len(set)))))
+	var b strings.Builder
+	var bitIdx, byteIdx uint
+
+	for range itemCount {
+		var itemIdx uint
+		for range bitsPerItem {
+			itemIdx <<= 1
+			itemIdx |= uint((randomBytes[byteIdx] & (0x80 >> (bitIdx % 8))) >> (7 - (bitIdx % 8)))
+			bitIdx++
+			if bitIdx%8 == 0 {
+				byteIdx++
+			}
+		}
+		itemIdx %= uint(len(set))
+		b.WriteRune(set[itemIdx])
+	}
+
+	return b.String()
+}
+
 // GeneratePasswords generates random passwords based on the configuration provided by the user.
 func GeneratePasswords(
 	count uint, // Number of passwords to generate.
@@ -16,89 +80,24 @@ func GeneratePasswords(
 	passwords []string, // Generated passwords.
 	err error, // Possible error encountered during password generation.
 ) {
-	// Validate the supplied count parameter.
-	if count < PasswordCountMin || count > PasswordCountMax {
-		return nil, fmt.Errorf("count must be at least %d and at most %d", PasswordCountMin, PasswordCountMax)
+	if err := validatePasswordParams(count, length); err != nil {
+		return nil, err
 	}
 
-	// Validate the supplied length parameter.
-	if length < PasswordLengthMin || length > PasswordLengthMax {
-		return nil, fmt.Errorf("length must be at least %d and at most %d", PasswordLengthMin, PasswordLengthMax)
+	charSet, err := deduplicateAlphabet(alphabet)
+	if err != nil {
+		return nil, err
 	}
 
-	// Deduplicate the provided alphabet.
-	chars := map[rune]struct{}{}
-	for _, char := range alphabet {
-		chars[char] = struct{}{}
-	}
-	var charSet []rune
-	for char := range chars {
-		charSet = append(charSet, char)
-	}
-
-	// Validate the provided alphabet.
-	if len(charSet) < AlphabetLengthMin {
-		return nil, fmt.Errorf("alphabet must contain at least %d unique characters", AlphabetLengthMin)
-	}
-
-	// Determine how many bytes are needed to represent a password of the specified length in the
-	// provided alphabet.
-	bitsPerChar := uint(math.Ceil(math.Log2(float64(len(charSet)))))
-	bitsPerPassword := bitsPerChar * length
-	bytesPerPassword := bitsPerPassword / 8
-	if bitsPerPassword%8 > 0 {
-		bytesPerPassword++
-	}
-
-	var (
-		b              strings.Builder // String builder for efficiently constructing passwords.
-		passwordBuffer []byte          // Byte buffer for random data used as password source.
-	)
+	bytesPerPassword := calculateBytesNeeded(length, uint(len(charSet)))
 
 	for range count {
-		// Read enough random data to sufficiently produce a password.
-		passwordBuffer = make([]byte, bytesPerPassword)
-		_, err = io.ReadFull(randSource, passwordBuffer)
-		if err != nil {
+		randomBytes := make([]byte, bytesPerPassword)
+		if _, err = io.ReadFull(randSource, randomBytes); err != nil {
 			return nil, err
 		}
 
-		var (
-			charIdx uint // Character index within the provided alphabet.
-			bitIdx  uint // Source buffer bit counter.
-			byteIdx uint // Source buffer byte counter.
-		)
-
-		for range length {
-			for range bitsPerChar {
-				// Left shift the character index to read the next bit.
-				charIdx <<= 1
-
-				// Set the bit from the password source in the character index.
-				charIdx |= uint((passwordBuffer[byteIdx] & (0x80 >> (bitIdx % 8))) >> (7 - (bitIdx % 8)))
-
-				// Increment the bit counter and, if necessary, the byte counter.
-				bitIdx++
-				if bitIdx%8 == 0 {
-					byteIdx++
-				}
-			}
-
-			// Ensure the character index is within the bounds of the alphabet.
-			charIdx = charIdx % uint(len(charSet))
-
-			// Retrieve the character from the alphabet and write it to the password.
-			b.WriteRune(charSet[charIdx])
-
-			// Reset character index value.
-			charIdx = 0
-		}
-
-		// Append the password to the return list.
-		passwords = append(passwords, b.String())
-
-		// Reset the string builder for the next password.
-		b.Reset()
+		passwords = append(passwords, sampleFromRuneSet(charSet, length, randomBytes))
 	}
 
 	return
