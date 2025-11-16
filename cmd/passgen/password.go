@@ -3,12 +3,51 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/schultz-is/passgen"
 	"github.com/spf13/cobra"
 )
+
+// buildAlphabet constructs an alphabet string based on character type flags.
+func buildAlphabet(allowLowercase, allowUppercase, allowNumeric, allowSpecial, allowAmbiguous bool) string {
+	type charSet struct {
+		enabled           bool
+		normalAlphabet    string
+		ambiguousAlphabet string
+	}
+
+	sets := []charSet{
+		{allowLowercase, passgen.AlphabetLower, passgen.AlphabetLowerAmbiguous},
+		{allowUppercase, passgen.AlphabetUpper, passgen.AlphabetUpperAmbiguous},
+		{allowNumeric, passgen.AlphabetNumeric, passgen.AlphabetNumericAmbiguous},
+	}
+
+	var b strings.Builder
+	for _, set := range sets {
+		if set.enabled {
+			if allowAmbiguous && set.ambiguousAlphabet != "" {
+				b.WriteString(set.ambiguousAlphabet)
+			} else {
+				b.WriteString(set.normalAlphabet)
+			}
+		}
+	}
+
+	if allowSpecial {
+		b.WriteString(passgen.AlphabetSpecial)
+	}
+
+	alphabet := b.String()
+	if alphabet == "" {
+		if allowAmbiguous {
+			return passgen.AlphabetDefaultAmbiguous
+		}
+		return passgen.AlphabetDefault
+	}
+
+	return alphabet
+}
 
 // buildPasswordCmd constructs the password subcommand responsible for generating passwords.
 func buildPasswordCmd() *cobra.Command {
@@ -52,44 +91,22 @@ func buildPasswordCmd() *cobra.Command {
 				return errors.New("too many args provided")
 			}
 
-			// The first argument is the password length.
+			// Parse the first argument (password length) if provided.
 			if len(args) > 0 {
-				length, err := strconv.ParseUint(
-					args[0],
-					10,
-					64,
-				)
+				length, err := parseUintArg(args, 0, "length")
 				if err != nil {
-					return errors.New("invalid length provided")
+					return err
 				}
-
-				// Bounds check the length for the platform.
-				if length > uint64(uintMax) {
-					return errors.New("invalid length provided")
-				}
-
-				// Update the configuration with the parsed information.
-				passwordConfig.length = uint(length)
+				passwordConfig.length = length
 			}
 
-			// The second argument is the password count.
+			// Parse the second argument (password count) if provided.
 			if len(args) > 1 {
-				count, err := strconv.ParseUint(
-					args[1],
-					10,
-					64,
-				)
+				count, err := parseUintArg(args, 1, "count")
 				if err != nil {
-					return errors.New("invalid count provided")
+					return err
 				}
-
-				// Bounds check the count for the platform.
-				if count > uint64(uintMax) {
-					return errors.New("invalid count provided")
-				}
-
-				// Update the configuration with the parsed information.
-				passwordConfig.count = uint(count)
+				passwordConfig.count = count
 			}
 
 			return nil
@@ -99,78 +116,13 @@ func buildPasswordCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Determine the alphabet to use.
 			if passwordConfig.alphabet == "" {
-				// Instantiate a string builder for efficient alphabet construction.
-				var b strings.Builder
-
-				// Determine if the user wants passwords which include lowercase characters.
-				if passwordConfig.allowLowercase {
-					// Determine whether or not ambiguous characters should be allowed in the output.
-					if passwordConfig.allowAmbiguous {
-						_, err = b.WriteString(passgen.AlphabetLowerAmbiguous)
-						if err != nil {
-							return err
-						}
-					} else {
-						_, err = b.WriteString(passgen.AlphabetLower)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				// Determine if the user wants passwords which include uppercase characters.
-				if passwordConfig.allowUppercase {
-					// Determine whether or not ambiguous characters should be allowed in the output.
-					if passwordConfig.allowAmbiguous {
-						_, err = b.WriteString(passgen.AlphabetUpperAmbiguous)
-						if err != nil {
-							return err
-						}
-					} else {
-						_, err = b.WriteString(passgen.AlphabetUpper)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				// Determine if the user wants passwords which include numeric characters.
-				if passwordConfig.allowNumeric {
-					// Determine whether or not ambiguous characters should be allowed in the output.
-					if passwordConfig.allowAmbiguous {
-						_, err = b.WriteString(passgen.AlphabetNumericAmbiguous)
-						if err != nil {
-							return err
-						}
-					} else {
-						_, err = b.WriteString(passgen.AlphabetNumeric)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				// Determine if the user wants passwords which include numeric characters.
-				if passwordConfig.allowSpecial {
-					_, err := b.WriteString(passgen.AlphabetSpecial)
-					if err != nil {
-						return err
-					}
-				}
-
-				// Build the alphabet based on user input.
-				passwordConfig.alphabet = b.String()
-
-				// If the user did not specify allowance of any of lowercase, uppercase, numeric, or
-				// special characters, rely on the default alphabet.
-				if passwordConfig.alphabet == "" {
-					// Determine whether or not ambiguous characters should be allowed in the output.
-					if passwordConfig.allowAmbiguous {
-						passwordConfig.alphabet = passgen.AlphabetDefaultAmbiguous
-					} else {
-						passwordConfig.alphabet = passgen.AlphabetDefault
-					}
-				}
+				passwordConfig.alphabet = buildAlphabet(
+					passwordConfig.allowLowercase,
+					passwordConfig.allowUppercase,
+					passwordConfig.allowNumeric,
+					passwordConfig.allowSpecial,
+					passwordConfig.allowAmbiguous,
+				)
 			}
 
 			// Generate passwords based on the command invocation.

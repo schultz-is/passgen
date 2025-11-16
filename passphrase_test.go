@@ -9,27 +9,49 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGeneratePassphrases(t *testing.T) {
-	type testReqs func(t *testing.T, passphrases []string, err error)
+type passphraseTestReqs func(t *testing.T, passphrases []string, err error)
 
-	type testDef struct {
-		name      string
-		count     uint
-		wordCount uint
-		separator rune
-		casing    PassphraseCasing
-		wordList  []string
+type passphraseTestDef struct {
+	name      string
+	count     uint
+	wordCount uint
+	separator rune
+	casing    PassphraseCasing
+	wordList  []string
 
-		requirements testReqs
-		setup        func() any
-		teardown     func(any)
+	requirements passphraseTestReqs
+	setup        func() any
+	teardown     func(any)
+}
+
+// runPassphraseTest executes a single passphrase generation test case.
+func runPassphraseTest(t *testing.T, test passphraseTestDef) {
+	var setupContext any
+	if test.setup != nil {
+		setupContext = test.setup()
 	}
+
+	passphrases, err := GeneratePassphrases(
+		test.count,
+		test.wordCount,
+		test.separator,
+		test.casing,
+		test.wordList,
+	)
+	test.requirements(t, passphrases, err)
+
+	if test.teardown != nil {
+		test.teardown(setupContext)
+	}
+}
+
+func TestGeneratePassphrases(t *testing.T) {
 
 	var alternateWordList = []string{
 		"alfa", "bravo", "charlie", "delta", "echo",
 	}
 
-	var tests = []testDef{
+	var tests = []passphraseTestDef{
 		{
 			"rational defaults",
 			PassphraseCountDefault,
@@ -259,28 +281,9 @@ func TestGeneratePassphrases(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(
-			test.name,
-			func(t *testing.T) {
-				var setupContext any
-				if test.setup != nil {
-					setupContext = test.setup()
-				}
-
-				passphrases, err := GeneratePassphrases(
-					test.count,
-					test.wordCount,
-					test.separator,
-					test.casing,
-					test.wordList,
-				)
-				test.requirements(t, passphrases, err)
-
-				if test.teardown != nil {
-					test.teardown(setupContext)
-				}
-			},
-		)
+		t.Run(test.name, func(t *testing.T) {
+			runPassphraseTest(t, test)
+		})
 	}
 }
 

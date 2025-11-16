@@ -13,6 +13,84 @@ import (
 // PassphraseCasing represents the casing of each word within a passphrase.
 type PassphraseCasing uint8
 
+// applyCasing applies the specified casing transformation to a word.
+func applyCasing(word string, casing PassphraseCasing) string {
+	switch casing {
+	case PassphraseCasingLower:
+		return strings.ToLower(word)
+	case PassphraseCasingUpper:
+		return strings.ToUpper(word)
+	case PassphraseCasingTitle:
+		return cases.Title(language.Und).String(word)
+	case PassphraseCasingNone:
+		return word
+	default:
+		return word
+	}
+}
+
+// validatePassphraseParams validates the count, word count, and casing parameters.
+func validatePassphraseParams(count, wordCount uint, casing PassphraseCasing) error {
+	if count < PassphraseCountMin || count > PassphraseCountMax {
+		return fmt.Errorf("count must be at least %d and at most %d", PassphraseCountMin, PassphraseCountMax)
+	}
+	if wordCount < PassphraseWordCountMin || wordCount > PassphraseWordCountMax {
+		return fmt.Errorf("word count must be at least %d and at most %d", PassphraseWordCountMin, PassphraseWordCountMax)
+	}
+	switch casing {
+	case PassphraseCasingLower, PassphraseCasingUpper, PassphraseCasingTitle, PassphraseCasingNone:
+		return nil
+	default:
+		return fmt.Errorf("invalid word casing")
+	}
+}
+
+// deduplicateWordList removes duplicate words from a word list and returns a word set.
+func deduplicateWordList(wordList []string, casing PassphraseCasing) ([]string, error) {
+	words := map[string]struct{}{}
+	for _, word := range wordList {
+		words[applyCasing(word, casing)] = struct{}{}
+	}
+
+	var wordSet []string
+	for word := range words {
+		wordSet = append(wordSet, word)
+	}
+
+	if len(wordSet) < WordListLengthMin {
+		return nil, fmt.Errorf("word list must contain at least %d unique words", WordListLengthMin)
+	}
+
+	return wordSet, nil
+}
+
+// sampleFromStringSet samples items from a string set with separators using random bytes.
+func sampleFromStringSet(set []string, itemCount uint, separator rune, randomBytes []byte) string {
+	bitsPerItem := uint(math.Ceil(math.Log2(float64(len(set)))))
+	var b strings.Builder
+	var bitIdx, byteIdx uint
+
+	for i := range itemCount {
+		var itemIdx uint
+		for range bitsPerItem {
+			itemIdx <<= 1
+			itemIdx |= uint((randomBytes[byteIdx] & (0x80 >> (bitIdx % 8))) >> (7 - (bitIdx % 8)))
+			bitIdx++
+			if bitIdx%8 == 0 {
+				byteIdx++
+			}
+		}
+		itemIdx %= uint(len(set))
+		b.WriteString(set[itemIdx])
+
+		if i < itemCount-1 {
+			b.WriteRune(separator)
+		}
+	}
+
+	return b.String()
+}
+
 // GeneratePassphrases generates random passphrases based on the configuration provided by the user.
 func GeneratePassphrases(
 	count uint, // Number of passphrases to generate.
@@ -24,112 +102,24 @@ func GeneratePassphrases(
 	passphrases []string, // Generated passphrases.
 	err error, // Possible error encountered during passphrase generation.
 ) {
-	// Validate the supplied count parameter.
-	if count < PassphraseCountMin || count > PassphraseCountMax {
-		return nil, fmt.Errorf("count must be at least %d and at most %d", PassphraseCountMin, PassphraseCountMax)
+	if err := validatePassphraseParams(count, wordCount, casing); err != nil {
+		return nil, err
 	}
 
-	// Validate the supplied word count parameter.
-	if wordCount < PassphraseWordCountMin || wordCount > PassphraseWordCountMax {
-		return nil, fmt.Errorf("word count must be at least %d and at most %d", PassphraseWordCountMin, PassphraseWordCountMax)
+	wordSet, err := deduplicateWordList(wordList, casing)
+	if err != nil {
+		return nil, err
 	}
 
-	// Validate the supplied casing parameter.
-	switch casing {
-	case PassphraseCasingLower, PassphraseCasingUpper, PassphraseCasingTitle, PassphraseCasingNone:
-		break
-	default:
-		return nil, fmt.Errorf("invalid word casing")
-	}
-
-	// Deduplicate the provided word list.
-	words := map[string]struct{}{}
-	for _, word := range wordList {
-		switch casing {
-		case PassphraseCasingLower:
-			words[strings.ToLower(word)] = struct{}{}
-		case PassphraseCasingUpper:
-			words[strings.ToUpper(word)] = struct{}{}
-		case PassphraseCasingTitle:
-			words[cases.Title(language.Und).String(word)] = struct{}{}
-		case PassphraseCasingNone:
-			words[word] = struct{}{}
-		}
-	}
-	var wordSet []string
-	for word := range words {
-		wordSet = append(wordSet, word)
-	}
-
-	// Validate the provided word list.
-	if len(wordSet) < WordListLengthMin {
-		return nil, fmt.Errorf("word list must contain at least %d unique words", WordListLengthMin)
-	}
-
-	// Determine how many bytes are needed to represent a passphrase of the specified word count in
-	// the provided word list.
-	bitsPerWord := uint(math.Ceil(math.Log2(float64(len(wordSet)))))
-	bitsPerPassphrase := bitsPerWord * wordCount
-	bytesPerPassphrase := bitsPerPassphrase / 8
-	if bitsPerPassphrase%8 > 0 {
-		bytesPerPassphrase++
-	}
-
-	var (
-		b                strings.Builder // String builder for efficiently constructing passphrases.
-		passphraseBuffer []byte          // Byte buffer for random data used as a passphrase source.
-	)
+	bytesPerPassphrase := calculateBytesNeeded(wordCount, uint(len(wordSet)))
 
 	for range count {
-		// Read enough random data to sufficiently produce a passphrase.
-		passphraseBuffer = make([]byte, bytesPerPassphrase)
-		_, err = io.ReadFull(randSource, passphraseBuffer)
-		if err != nil {
+		randomBytes := make([]byte, bytesPerPassphrase)
+		if _, err = io.ReadFull(randSource, randomBytes); err != nil {
 			return nil, err
 		}
 
-		var (
-			j       uint // Passphrase word counter.
-			wordIdx uint // Word index within the provided word list.
-			bitIdx  uint // Source buffer bit counter.
-			byteIdx uint // Source buffer byte counter.
-		)
-
-		for j = range wordCount {
-			for range bitsPerWord {
-				// Left shift the word index to read the next bit.
-				wordIdx <<= 1
-
-				// Set the bit from the passphrase source in the word index.
-				wordIdx |= uint((passphraseBuffer[byteIdx] & (0x80 >> (bitIdx % 8))) >> (7 - (bitIdx % 8)))
-
-				// Increment the bit counter and, if necessary, the byte counter.
-				bitIdx++
-				if bitIdx%8 == 0 {
-					byteIdx++
-				}
-			}
-
-			// Ensure the word index is within the bounds of the word set.
-			wordIdx = wordIdx % uint(len(wordSet))
-
-			// Retrieve the word from the word set and write it to the passphrase.
-			b.WriteString(wordSet[wordIdx])
-
-			// Write the provided separator if this is not the final word in the passphrase.
-			if j < wordCount-1 {
-				b.WriteRune(separator)
-			}
-
-			// Reset the word index value.
-			wordIdx = 0
-		}
-
-		// Append the passphrase to the return list.
-		passphrases = append(passphrases, b.String())
-
-		// Reset the string builder for the next passphrase.
-		b.Reset()
+		passphrases = append(passphrases, sampleFromStringSet(wordSet, wordCount, separator, randomBytes))
 	}
 
 	return

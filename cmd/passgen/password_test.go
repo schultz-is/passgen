@@ -10,20 +10,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPasswordCommand(t *testing.T) {
-	type testReqs func(t *testing.T, output string, err error)
+type passwordCmdTestReqs func(t *testing.T, output string, err error)
 
-	type testDef struct {
-		name  string
-		args  []string
-		flags map[string]string
+type passwordCmdTestDef struct {
+	name  string
+	args  []string
+	flags map[string]string
 
-		requirements testReqs
-		setup        func() any
-		teardown     func(any)
+	requirements passwordCmdTestReqs
+	setup        func() any
+	teardown     func(any)
+}
+
+// runPasswordCmdTest executes a single password command test case.
+func runPasswordCmdTest(t *testing.T, test passwordCmdTestDef) {
+	var setupContext any
+	if test.setup != nil {
+		setupContext = test.setup()
 	}
 
-	var tests = []testDef{
+	passwordCmd := buildPasswordCmd()
+	var outputBuffer strings.Builder
+	passwordCmd.SetOut(&outputBuffer)
+	passwordCmd.SetArgs(test.args)
+
+	for flag, value := range test.flags {
+		err := passwordCmd.Flags().Set(flag, value)
+		require.NoError(t, err)
+	}
+
+	err := passwordCmd.Execute()
+	test.requirements(t, outputBuffer.String(), err)
+
+	if test.teardown != nil {
+		test.teardown(setupContext)
+	}
+}
+
+func TestPasswordCommand(t *testing.T) {
+	var tests = []passwordCmdTestDef{
 		{
 			"rational defaults",
 			nil,
@@ -303,31 +328,8 @@ func TestPasswordCommand(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(
-			test.name,
-			func(t *testing.T) {
-				var setupContext any
-				if test.setup != nil {
-					setupContext = test.setup()
-				}
-
-				passwordCmd := buildPasswordCmd()
-				var outputBuffer strings.Builder
-				passwordCmd.SetOut(&outputBuffer)
-
-				passwordCmd.SetArgs(test.args)
-				for flag, value := range test.flags {
-					err := passwordCmd.Flags().Set(flag, value)
-					require.NoError(t, err)
-				}
-
-				err := passwordCmd.Execute()
-				test.requirements(t, outputBuffer.String(), err)
-
-				if test.teardown != nil {
-					test.teardown(setupContext)
-				}
-			},
-		)
+		t.Run(test.name, func(t *testing.T) {
+			runPasswordCmdTest(t, test)
+		})
 	}
 }
