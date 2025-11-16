@@ -12,38 +12,68 @@ import (
 	"golang.org/x/text/language"
 )
 
-func TestPassphraseCommand(t *testing.T) {
-	type testReqs func(t *testing.T, output string, err error)
+type passphraseCmdTestReqs func(t *testing.T, output string, err error)
 
-	type testDef struct {
-		name  string
-		args  []string
-		flags map[string]string
+type passphraseCmdTestDef struct {
+	name  string
+	args  []string
+	flags map[string]string
 
-		requirements testReqs
-		setup        func() any
-		teardown     func(any)
+	requirements passphraseCmdTestReqs
+	setup        func() any
+	teardown     func(any)
+}
+
+// runPassphraseCmdTest executes a single passphrase command test case.
+func runPassphraseCmdTest(t *testing.T, test passphraseCmdTestDef) {
+	var setupContext any
+	if test.setup != nil {
+		setupContext = test.setup()
 	}
 
-	// Construct a custom word list and write it to a temp file.
-	var alternateWordList = []string{
-		"alfa", "bravo", "charlie", "delta", "echo",
+	passphraseCmd := buildPassphraseCmd()
+	var outputBuffer strings.Builder
+	passphraseCmd.SetOut(&outputBuffer)
+	passphraseCmd.SetArgs(test.args)
+
+	for flag, value := range test.flags {
+		err := passphraseCmd.Flags().Set(flag, value)
+		require.NoError(t, err)
 	}
 
+	err := passphraseCmd.Execute()
+	test.requirements(t, outputBuffer.String(), err)
+
+	if test.teardown != nil {
+		test.teardown(setupContext)
+	}
+}
+
+// createWordListFile creates a temporary file with the provided word list.
+func createWordListFile(t *testing.T, words []string) (string, func()) {
 	wordListFile, err := os.CreateTemp("", "")
-
-	defer func() {
-		_ = wordListFile.Close()
-	}()
-
 	require.NoError(t, err)
-	wordListFilename := wordListFile.Name()
-	for _, word := range alternateWordList {
+
+	filename := wordListFile.Name()
+	for _, word := range words {
 		_, err = wordListFile.WriteString(word + "\n")
 		require.NoError(t, err)
 	}
 
-	var tests = []testDef{
+	cleanup := func() {
+		_ = wordListFile.Close()
+	}
+
+	return filename, cleanup
+}
+
+func TestPassphraseCommand(t *testing.T) {
+	// Construct a custom word list and write it to a temp file.
+	alternateWordList := []string{"alfa", "bravo", "charlie", "delta", "echo"}
+	wordListFilename, cleanup := createWordListFile(t, alternateWordList)
+	defer cleanup()
+
+	var tests = []passphraseCmdTestDef{
 		{
 			"rational defaults",
 			nil,
@@ -416,31 +446,8 @@ func TestPassphraseCommand(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(
-			test.name,
-			func(t *testing.T) {
-				var setupContext any
-				if test.setup != nil {
-					setupContext = test.setup()
-				}
-
-				passphraseCmd := buildPassphraseCmd()
-				var outputBuffer strings.Builder
-				passphraseCmd.SetOut(&outputBuffer)
-
-				passphraseCmd.SetArgs(test.args)
-				for flag, value := range test.flags {
-					err := passphraseCmd.Flags().Set(flag, value)
-					require.NoError(t, err)
-				}
-
-				err := passphraseCmd.Execute()
-				test.requirements(t, outputBuffer.String(), err)
-
-				if test.teardown != nil {
-					test.teardown(setupContext)
-				}
-			},
-		)
+		t.Run(test.name, func(t *testing.T) {
+			runPassphraseCmdTest(t, test)
+		})
 	}
 }

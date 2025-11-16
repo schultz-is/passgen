@@ -10,21 +10,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGeneratePasswords(t *testing.T) {
-	type testReqs func(t *testing.T, passwords []string, err error)
+type passwordTestReqs func(t *testing.T, passwords []string, err error)
 
-	type testDef struct {
-		name     string
-		count    uint
-		length   uint
-		alphabet string
+type passwordTestDef struct {
+	name     string
+	count    uint
+	length   uint
+	alphabet string
 
-		requirements testReqs
-		setup        func() any
-		teardown     func(any)
+	requirements passwordTestReqs
+	setup        func() any
+	teardown     func(any)
+}
+
+// runPasswordTest executes a single password generation test case.
+func runPasswordTest(t *testing.T, test passwordTestDef) {
+	var setupContext any
+	if test.setup != nil {
+		setupContext = test.setup()
 	}
 
-	var tests = []testDef{
+	passwords, err := GeneratePasswords(test.count, test.length, test.alphabet)
+	test.requirements(t, passwords, err)
+
+	if test.teardown != nil {
+		test.teardown(setupContext)
+	}
+}
+
+func TestGeneratePasswords(t *testing.T) {
+	var tests = []passwordTestDef{
 		{
 			"rational defaults",
 			PasswordCountDefault,
@@ -192,26 +207,9 @@ func TestGeneratePasswords(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(
-			test.name,
-			func(t *testing.T) {
-				var setupContext any
-				if test.setup != nil {
-					setupContext = test.setup()
-				}
-
-				passwords, err := GeneratePasswords(
-					test.count,
-					test.length,
-					test.alphabet,
-				)
-				test.requirements(t, passwords, err)
-
-				if test.teardown != nil {
-					test.teardown(setupContext)
-				}
-			},
-		)
+		t.Run(test.name, func(t *testing.T) {
+			runPasswordTest(t, test)
+		})
 	}
 }
 
